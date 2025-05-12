@@ -1,0 +1,41 @@
+version: '3.8'
+
+services: 
+    registry: 
+      image: registry:2
+      container_name: registry
+      ports: 
+        - "5000:5000"
+      environment:
+        REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+        REGISTRY_HTTP_TLS_CERTIFCATES: /certs/domain.crt
+        REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+
+        REGISTRY_AUTH: token
+        REGISTRY_AUTH_TOKEN_REALM: https://registry.local:5000/auth
+        REGISTRY_AUTH_TOCKEN_SERVICE: docker-registry
+        REGISTRY_AUTH_TOKEN_ISSUER: registry-token-issuer
+        REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /auth/tocken.pub
+
+        volumes:
+          - ./data:/var/lib/registry
+          - ./auth:/auth
+          - ./certs:/certs
+
+          logging:
+            driver: "json-file"
+            options:
+              max-size: "10m"
+              max-file: "3"
+
+          registry-admin:
+            image: joxit/docker-registry-ui:latest
+            container_name: registry-admin
+            ports:
+              - "8080:80"
+              envinronment: 
+                - REGISTRY_TITLE=Private Docker Registry
+                - Registry_URL=https://registry.local:5000
+                - DELETE_IMAGES=true
+              depends_on;
+                -registry
